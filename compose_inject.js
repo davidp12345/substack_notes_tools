@@ -178,7 +178,8 @@
             showToast('Editor not found and clipboard unavailable. Please copy from X.');
           }
         }
-      } else if (hadUrlMessage || token) {
+      } else if (hadUrlMessage && hadUrlMessage.length > 0) {
+        // Only show error if we had a URL message parameter with content but couldn't process it
         showToast('Could not retrieve text. Please copy directly from X.');
       }
     } catch (err) {
