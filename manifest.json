@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Substack Notes Extension",
+  "name": "Notes Toolkit Extension",
   "version": "2.0.0",
-  "description": "Convert Substack highlights to Notes, with LinkedIn and X support",
+  "description": "LinkedIn and X/Twitter integration for Notes",
   "permissions": [
     "activeTab",
     "storage",
@@ -15,12 +15,12 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Substack Notes Toolkit"
+    "default_title": "Notes Toolkit"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["substack_inject.js", "compose_inject.js"],
+      "matches": ["https://substack.com/*"],
+      "js": ["compose_inject.js"],
       "run_at": "document_idle"
     },
     {
