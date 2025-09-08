@@ -1,5 +1,6 @@
 (() => {
 'use strict';
+const DEBUG = false; // Set to false for production
 
 (async function gate(){
   try{
@@ -175,7 +176,7 @@ function main(){
     
     // Path A: Small text (≤1800 chars) - URL parameter for instant population
     if (text.length <= 1800) {
-      try { console.log(`[X-Inject] Using URL parameter path for ${text.length} chars`); } catch {}
+      if (DEBUG) { try { console.log(`[X-Inject] Using URL parameter path for ${text.length} chars`); } catch {} }
       
       const params = new URLSearchParams();
       params.set('action', 'compose');
@@ -197,13 +198,13 @@ function main(){
       }
       
       const composeUrl = `${NOTE_COMPOSE_ORIGIN}${NOTE_COMPOSE_PATH}?${params.toString()}`;
-      try { console.log(`[X-Inject] Opening compose page: ${composeUrl}`); } catch {}
+      if (DEBUG) { try { console.log(`[X-Inject] Opening compose page: ${composeUrl}`); } catch {} }
       window.open(composeUrl, '_blank', 'noopener');
       return;
     }
     
     // Path B: Large text (>1800 chars) - Storage only
-    try { console.log(`[X-Inject] Using storage path for ${text.length} chars with token: ${token}`); } catch {}
+    if (DEBUG) { try { console.log(`[X-Inject] Using storage path for ${text.length} chars with token: ${token}`); } catch {} }
     
     try {
       const { pendingNotes } = await chrome.storage.local.get(['pendingNotes']);
@@ -224,7 +225,7 @@ function main(){
     // NO message parameter for large text
     
     const composeUrl = `${NOTE_COMPOSE_ORIGIN}${NOTE_COMPOSE_PATH}?${params.toString()}`;
-    try { console.log(`[X-Inject] Opening compose page: ${composeUrl}`); } catch {}
+    if (DEBUG) { try { console.log(`[X-Inject] Opening compose page: ${composeUrl}`); } catch {} }
     window.open(composeUrl, '_blank', 'noopener');
   }
 
@@ -234,10 +235,10 @@ function main(){
     try{
       const all = await chrome.storage.local.get(null);
       const keys = Object.keys(all).filter(k=>k.startsWith('noteTransfer:'));
-      console.log('[Debug] Found transfers:', keys);
-      for (const k of keys){ const d = all[k]; console.log(`[Debug] ${k}: ${d.text?.length||0} chars, age: ${Date.now()-(d.timestamp||0)}ms`); }
+      if (DEBUG) { console.log('[Debug] Found transfers:', keys); }
+      for (const k of keys){ const d = all[k]; if (DEBUG) { console.log(`[Debug] ${k}: ${d.text?.length||0} chars, age: ${Date.now()-(d.timestamp||0)}ms`); } }
       const bytes = await chrome.storage.local.getBytesInUse();
-      console.log(`[Debug] Storage used: ${bytes} bytes`);
+      if (DEBUG) { console.log(`[Debug] Storage used: ${bytes} bytes`); }
     }catch{}
   }
 

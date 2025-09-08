@@ -1,15 +1,16 @@
 // compose_inject.js
 (function(){
   'use strict';
+  const DEBUG = false; // Set to false for production
   const u = new URL(location.href);
-  try { console.log('[Compose-Inject] Script loaded on:', location.href); } catch {}
+  if (DEBUG) { try { console.log('[Compose-Inject] Script loaded on:', location.href); } catch {} }
   const isNotesNew = u.pathname.includes('/notes') && (u.pathname.includes('/new') || u.search.includes('compose'));
   const isFeedCompose = u.pathname.startsWith('/home') && (u.searchParams.get('action') === 'compose' || !!(u.searchParams.get('note_token') || u.searchParams.get('token')));
   const hasTokenParam = !!(u.searchParams.get('note_token') || u.searchParams.get('token'));
   const isHomeWithToken = u.pathname === '/home' && hasTokenParam;
   const shouldRun = isNotesNew || isFeedCompose || isHomeWithToken || (u.pathname.startsWith('/home') && hasTokenParam);
-  try { console.log('[Compose-Inject] Path check:', { pathname: u.pathname, action: u.searchParams.get('action'), isNotesNew, isFeedCompose, hasTokenParam, shouldRun }); } catch {}
-  if (!shouldRun) { try { console.log('[Compose-Inject] Exiting - URL does not match compose pattern'); } catch {} return; }
+  if (DEBUG) { try { console.log('[Compose-Inject] Path check:', { pathname: u.pathname, action: u.searchParams.get('action'), isNotesNew, isFeedCompose, hasTokenParam, shouldRun }); } catch {} }
+  if (!shouldRun) { if (DEBUG) { try { console.log('[Compose-Inject] Exiting - URL does not match compose pattern'); } catch {} } return; }
 
   const NOTE_PREFILL_PARAM = 'message';
 
@@ -18,7 +19,7 @@
       const params = new URL(location.href).searchParams;
       const hadUrlMessage = !!params.get(NOTE_PREFILL_PARAM);
       const token = params.get('note_token') || params.get('token');
-      try{ console.log('[Compose-Inject] Starting with token:', token); console.log('[Compose-Inject] URL params:', Array.from(params.entries())); }catch{}
+      if (DEBUG) { try{ console.log('[Compose-Inject] Starting with token:', token); console.log('[Compose-Inject] URL params:', Array.from(params.entries())); }catch{} }
 
       const getEditor = () => {
         // ONLY target the NEW Notes composer, not existing posts
@@ -38,20 +39,20 @@
       // Path A: Check URL message parameter first (small text ≤1800 chars)
       const urlMessage = params.get(NOTE_PREFILL_PARAM);
       if (urlMessage && urlMessage.length > 0) {
-        console.log('[Compose-Inject] Using URL message parameter');
+        if (DEBUG) { console.log('[Compose-Inject] Using URL message parameter'); }
         textToInsert = urlMessage;
         
         // Copy to clipboard for small posts
         try {
           await navigator.clipboard.writeText(urlMessage);
           clipboardPopulated = true;
-          console.log('[Compose-Inject] Small post text copied to clipboard as backup');
+          if (DEBUG) { console.log('[Compose-Inject] Small post text copied to clipboard as backup'); }
         } catch (e) {
           console.error('[Compose-Inject] Clipboard copy failed:', e);
         }
       } else if (token) {
         // Path B: Retrieve from storage (large text >1800 chars)
-        console.log('[Compose-Inject] Large post detected, retrieving from storage');
+        if (DEBUG) { console.log('[Compose-Inject] Large post detected, retrieving from storage'); }
         
         // CRITICAL: First try to get ANY stored text and immediately copy to clipboard
         // This ensures clipboard is populated BEFORE auto-insert attempts
@@ -69,19 +70,19 @@
             const data = await chrome.storage.local.get([key]);
             if (key === `noteTransfer:${token}` && data[key]?.text) {
               immediateText = String(data[key].text).slice(0, 6000);
-              console.log(`[Compose-Inject] Found text in noteTransfer:${token}`);
+              if (DEBUG) { console.log(`[Compose-Inject] Found text in noteTransfer:${token}`); }
               break;
             } else if (key === 'pendingNoteText' && data.pendingNoteText) {
               immediateText = String(data.pendingNoteText).slice(0, 6000);
-              console.log('[Compose-Inject] Found text in pendingNoteText');
+              if (DEBUG) { console.log('[Compose-Inject] Found text in pendingNoteText'); }
               break;
             } else if (key === 'pendingNotes' && data.pendingNotes?.[token]) {
               immediateText = String(data.pendingNotes[token].text).slice(0, 6000);
-              console.log('[Compose-Inject] Found text in pendingNotes map');
+              if (DEBUG) { console.log('[Compose-Inject] Found text in pendingNotes map'); }
               break;
             }
           } catch (e) {
-            console.log(`[Compose-Inject] Could not read ${key}:`, e);
+            if (DEBUG) { console.log(`[Compose-Inject] Could not read ${key}:`, e); }
           }
         }
         
@@ -91,7 +92,7 @@
             await navigator.clipboard.writeText(immediateText);
             clipboardPopulated = true;
             textToInsert = immediateText;
-            console.log(`[Compose-Inject] IMMEDIATELY copied ${immediateText.length} chars to clipboard`);
+            if (DEBUG) { console.log(`[Compose-Inject] IMMEDIATELY copied ${immediateText.length} chars to clipboard`); }
             showToast('Text copied to clipboard. Auto-populating editor...');
           } catch (e) {
             console.error('[Compose-Inject] Critical clipboard copy failed:', e);
@@ -99,13 +100,13 @@
           }
         } else {
           // If immediate text not found, do a quick storage check (much faster)
-          console.log('[Compose-Inject] No immediate text, doing quick storage check');
+          if (DEBUG) { console.log('[Compose-Inject] No immediate text, doing quick storage check'); }
           const key = `noteTransfer:${token}`;
           const stored = await chrome.storage.local.get([key]);
           const entry = stored[key];
           if (entry && entry.text){ 
             textToInsert = String(entry.text).slice(0,6000);
-            console.log(`[Compose-Inject] Found text in quick check: ${textToInsert.length} chars`);
+            if (DEBUG) { console.log(`[Compose-Inject] Found text in quick check: ${textToInsert.length} chars`); }
             
             try {
               await navigator.clipboard.writeText(textToInsert);
@@ -119,7 +120,7 @@
             const fallback = await chrome.storage.local.get(['pendingNoteText']);
             if (fallback.pendingNoteText) {
               textToInsert = fallback.pendingNoteText;
-              console.log('[Compose-Inject] Using pendingNoteText as fallback');
+              if (DEBUG) { console.log('[Compose-Inject] Using pendingNoteText as fallback'); }
               
               try {
                 await navigator.clipboard.writeText(textToInsert);
@@ -157,9 +158,9 @@
             chrome.storage.local.remove(['pendingNoteText','pendingNoteTs','pendingNoteToken']);
             
             if (clipboardPopulated) {
-              console.log('[Compose-Inject] Success! Text auto-inserted and clipboard backup available');
+              if (DEBUG) { console.log('[Compose-Inject] Success! Text auto-inserted and clipboard backup available'); }
             } else {
-              console.log('[Compose-Inject] Text auto-inserted (no clipboard backup)');
+              if (DEBUG) { console.log('[Compose-Inject] Text auto-inserted (no clipboard backup)'); }
             }
             return;
           } else {
